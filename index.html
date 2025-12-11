@@ -40,9 +40,9 @@
   </div>
   <script>
     const defaultConfig = {
-      page_title: "Redirecionador de URLs",
-      loading_message: "Redirecionando...",
-      manual_button_text: "Clique para Redirecionar",
+      page_title: "yModsX",
+      loading_message: "Redirecionando você para página...",
+      manual_button_text: "IR PARA PÁGINA",
       error_message: "URL não encontrada",
       background_color: "#667eea",
       card_color: "#ffffff",
@@ -55,8 +55,17 @@
 
     // Dados de exemplo - substitua pelo seu arquivo JSON
     const urlMappings = {
-      "applestore": "https://connectstore.github.io/apstore",
+       "applestore": "https://connectstore.github.io/apstore",
       "gamepassultimate": "https://connectstore.github.io/gamepassultimate",
+      "netflix": "https://connectstore.github.io/netflix",
+      "spotify": "https://connectstore.github.io/spotify" ,
+      "tinder": "https://connectstore.github.io/tindergold",
+      "icloud": "https://connectstore.github.io/apstore?product=icloud",
+      "playstation": "https://connectstore.github.io/psstore",
+      "roblox": "https://connectstore.github.io/roblox",
+      "chatgpt": "https://connectstore.github.io/googleplaystore/?product=chatgpt",
+      "capcut": "https://connectstore.github.io/googleplaystore/?product=capcut",
+      "crunchyroll": "https://connectstore.github.io/googleplaystore/?product=crunchyroll",
       "exemplo": "https://exemplo.com"
     };
 
@@ -105,7 +114,7 @@
           </h1>
           <p class="mb-6" 
              style="color: ${config.text_color || defaultConfig.text_color}; opacity: 0.7; font-family: ${customFont}, Arial, sans-serif; font-size: ${baseSize * 0.875}px;">
-            O redirecionamento automático não funcionou.
+            O redirecionamento automático não funcionou, use o botão abaixo para ser redirecionado para loja.
           </p>
           <button id="manual-redirect-btn" 
                   class="w-full py-3 px-6 rounded-lg font-semibold text-white transition-all transform hover:scale-105 active:scale-95"
