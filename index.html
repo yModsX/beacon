@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="pt-BR" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>URL Shortener</title>
+  <script src="/_sdk/element_sdk.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      box-sizing: border-box;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .spinner {
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .fade-in {
+      animation: fadeIn 0.5s ease-out;
+    }
+  </style>
+  <style>@view-transition { navigation: auto; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+ </head>
+ <body class="h-full">
+  <div id="app" class="w-full h-full flex items-center justify-center" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+   <div class="max-w-md w-full mx-4">
+    <div id="content-area" class="bg-white rounded-2xl shadow-2xl p-8 fade-in"><!-- Conteúdo será inserido aqui -->
+    </div>
+   </div>
+  </div>
+  <script>
+    const defaultConfig = {
+      page_title: "Redirecionador de URLs",
+      loading_message: "Redirecionando...",
+      manual_button_text: "Clique para Redirecionar",
+      error_message: "URL não encontrada",
+      background_color: "#667eea",
+      card_color: "#ffffff",
+      text_color: "#1f2937",
+      button_color: "#667eea",
+      error_color: "#ef4444",
+      font_family: "system-ui",
+      font_size: 16
+    };
+
+    // Dados de exemplo - substitua pelo seu arquivo JSON
+    const urlMappings = {
+      "applestore": "https://connectstore.github.io/apstore",
+      "gamepassultimate": "https://connectstore.github.io/gamepassultimate",
+      "exemplo": "https://exemplo.com"
+    };
+
+    let targetUrl = null;
+    let urlKey = null;
+
+    function getUrlParameter(name) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(name);
+    }
+
+    function showLoading(config) {
+      const contentArea = document.getElementById('content-area');
+      const customFont = config.font_family || defaultConfig.font_family;
+      const baseSize = config.font_size || defaultConfig.font_size;
+      
+      contentArea.innerHTML = `
+        <div class="text-center">
+          <div class="inline-block w-16 h-16 border-4 rounded-full spinner mb-6" 
+               style="border-color: ${config.button_color || defaultConfig.button_color}; border-top-color: transparent;"></div>
+          <h1 class="text-2xl font-bold mb-2" 
+              style="color: ${config.text_color || defaultConfig.text_color}; font-family: ${customFont}, Arial, sans-serif; font-size: ${baseSize * 1.5}px;">
+            ${config.page_title || defaultConfig.page_title}
+          </h1>
+          <p class="text-lg" 
+             style="color: ${config.text_color || defaultConfig.text_color}; opacity: 0.7; font-family: ${customFont}, Arial, sans-serif; font-size: ${baseSize}px;">
+            ${config.loading_message || defaultConfig.loading_message}
+          </p>
+        </div>
+      `;
+    }
+
+    function showManualRedirect(config) {
+      const contentArea = document.getElementById('content-area');
+      const customFont = config.font_family || defaultConfig.font_family;
+      const baseSize = config.font_size || defaultConfig.font_size;
+      
+      contentArea.innerHTML = `
+        <div class="text-center">
+          <svg class="w-16 h-16 mx-auto mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color: ${config.button_color || defaultConfig.button_color};">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 9l3 3m0 0l-3 3m3-3H8m13 0a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          <h1 class="text-2xl font-bold mb-4" 
+              style="color: ${config.text_color || defaultConfig.text_color}; font-family: ${customFont}, Arial, sans-serif; font-size: ${baseSize * 1.5}px;">
+            ${config.page_title || defaultConfig.page_title}
+          </h1>
+          <p class="mb-6" 
+             style="color: ${config.text_color || defaultConfig.text_color}; opacity: 0.7; font-family: ${customFont}, Arial, sans-serif; font-size: ${baseSize * 0.875}px;">
+            O redirecionamento automático não funcionou.
+          </p>
+          <button id="manual-redirect-btn" 
+                  class="w-full py-3 px-6 rounded-lg font-semibold text-white transition-all transform hover:scale-105 active:scale-95"
+                  style="background-color: ${config.button_color || defaultConfig.button_color}; font-family: ${customFont}, Arial, sans-serif; font-size: ${baseSize}px;">
+            ${config.manual_button_text || defaultConfig.manual_button_text}
+          </button>
+        </div>
+      `;
+      
+      document.getElementById('manual-redirect-btn').addEventListener('click', () => {
+        if (targetUrl) {
+          window.open(targetUrl, '_blank', 'noopener,noreferrer');
+        }
+      });
+    }
+
+    function showError(config) {
+      const contentArea = document.getElementById('content-area');
+      const customFont = config.font_family || defaultConfig.font_family;
+      const baseSize = config.font_size || defaultConfig.font_size;
+      
+      contentArea.innerHTML = `
+        <div class="text-center">
+          <svg class="w-16 h-16 mx-auto mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color: ${config.error_color || defaultConfig.error_color};">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          <h1 class="text-2xl font-bold mb-4" 
+              style="color: ${config.error_color || defaultConfig.error_color}; font-family: ${customFont}, Arial, sans-serif; font-size: ${baseSize * 1.5}px;">
+            ${config.error_message || defaultConfig.error_message}
+          </h1>
+          <p class="mb-2" 
+             style="color: ${config.text_color || defaultConfig.text_color}; opacity: 0.7; font-family: ${customFont}, Arial, sans-serif; font-size: ${baseSize * 0.875}px;">
+            A chave "${urlKey}" não existe no sistema.
+          </p>
+          <p style="color: ${config.text_color || defaultConfig.text_color}; opacity: 0.5; font-family: ${customFont}, Arial, sans-serif; font-size: ${baseSize * 0.75}px;">
+            Verifique o parâmetro "id" na URL.
+          </p>
+        </div>
+      `;
+    }
+
+    async function handleRedirect(config) {
+      urlKey = getUrlParameter('id');
+      
+      if (!urlKey) {
+        showError(config);
+        return;
+      }
+      
+      targetUrl = urlMappings[urlKey.toLowerCase()];
+      
+      if (!targetUrl) {
+        showError(config);
+        return;
+      }
+      
+      showLoading(config);
+      
+      // Aguarda 1.5 segundos antes de redirecionar
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Tenta redirecionar em nova aba
+      const newWindow = window.open(targetUrl, '_blank', 'noopener,noreferrer');
+      
+      // Se o popup foi bloqueado, mostra botão manual
+      if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+        showManualRedirect(config);
+      }
+    }
+
+    async function onConfigChange(config) {
+      const appElement = document.getElementById('app');
+      const contentArea = document.getElementById('content-area');
+      const customFont = config.font_family || defaultConfig.font_family;
+      
+      appElement.style.background = `linear-gradient(135deg, ${config.background_color || defaultConfig.background_color} 0%, ${config.button_color || defaultConfig.button_color} 100%)`;
+      contentArea.style.backgroundColor = config.card_color || defaultConfig.card_color;
+      
+      // Re-renderiza o conteúdo atual com as novas configurações
+      if (!urlKey) {
+        showError(config);
+      } else if (targetUrl) {
+        showManualRedirect(config);
+      } else {
+        showError(config);
+      }
+    }
+
+    // Inicializa o SDK
+    if (window.elementSdk) {
+      window.elementSdk.init({
+        defaultConfig: defaultConfig,
+        onConfigChange: onConfigChange,
+        mapToCapabilities: (config) => ({
+          recolorables: [
+            {
+              get: () => config.background_color || defaultConfig.background_color,
+              set: (value) => {
+                config.background_color = value;
+                window.elementSdk.setConfig({ background_color: value });
+              }
+            },
+            {
+              get: () => config.card_color || defaultConfig.card_color,
+              set: (value) => {
+                config.card_color = value;
+                window.elementSdk.setConfig({ card_color: value });
+              }
+            },
+            {
+              get: () => config.text_color || defaultConfig.text_color,
+              set: (value) => {
+                config.text_color = value;
+                window.elementSdk.setConfig({ text_color: value });
+              }
+            },
+            {
+              get: () => config.button_color || defaultConfig.button_color,
+              set: (value) => {
+                config.button_color = value;
+                window.elementSdk.setConfig({ button_color: value });
+              }
+            },
+            {
+              get: () => config.error_color || defaultConfig.error_color,
+              set: (value) => {
+                config.error_color = value;
+                window.elementSdk.setConfig({ error_color: value });
+              }
+            }
+          ],
+          borderables: [],
+          fontEditable: {
+            get: () => config.font_family || defaultConfig.font_family,
+            set: (value) => {
+              config.font_family = value;
+              window.elementSdk.setConfig({ font_family: value });
+            }
+          },
+          fontSizeable: {
+            get: () => config.font_size || defaultConfig.font_size,
+            set: (value) => {
+              config.font_size = value;
+              window.elementSdk.setConfig({ font_size: value });
+            }
+          }
+        }),
+        mapToEditPanelValues: (config) => new Map([
+          ["page_title", config.page_title || defaultConfig.page_title],
+          ["loading_message", config.loading_message || defaultConfig.loading_message],
+          ["manual_button_text", config.manual_button_text || defaultConfig.manual_button_text],
+          ["error_message", config.error_message || defaultConfig.error_message]
+        ])
+      });
+      
+      handleRedirect(window.elementSdk.config);
+    } else {
+      handleRedirect(defaultConfig);
+    }
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9ac83528e1b3ce20',t:'MTc2NTQ4OTkzMS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
